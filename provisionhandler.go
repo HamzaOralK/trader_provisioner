@@ -56,7 +56,7 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 	trader := Trader { Name: pr.Name, TraderId: deploymentId, TradingModel: pr.TradingModel}
 	dbResult := db.instance.Create(&trader)
 	if dbResult.Error != nil {
-		log.Printf("Could not provision trader for user %s", pr.Name)
+		log.Printf(dbResult.Error.Error())
 		http.Error(w, dbResult.Error.Error(), http.StatusBadRequest)
 	} else {
 		log.Println("Record has been created")
