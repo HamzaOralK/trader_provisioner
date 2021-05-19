@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	uuid "github.com/satori/go.uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+	"log"
 	"net/http"
 )
 
@@ -53,13 +53,20 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	fmt.Println("Creating deployment...")
-	result, err := deploymentsClient.Create(context.TODO(), deployment, metav1.CreateOptions{})
-	if err != nil {
-		panic(err)
-	}
 	trader := Trader { Name: pr.Name, TraderId: deploymentId, TradingModel: pr.TradingModel}
-	db.Create(&trader)
-	fmt.Printf("Created deployment %q.\n", result.GetObjectMeta().GetName())
+	dbResult := db.instance.Create(&trader)
+	if dbResult.Error != nil {
+		log.Printf("Could not provision trader for user %s", pr.Name)
+		http.Error(w, dbResult.Error.Error(), http.StatusBadRequest)
+	} else {
+		log.Println("Record has been created")
+		log.Println("Creating deployment...")
+		result, err := deploymentsClient.Create(context.TODO(), deployment, metav1.CreateOptions{})
+		if err != nil {
+			panic(err)
+		}
+		log.Printf("Created deployment %q.\n", result.GetObjectMeta().GetName())
+	}
+
 
 }

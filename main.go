@@ -1,28 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gorilla/mux"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"net/http"
 )
 
-var db *gorm.DB
+var db DB
 var err error
 var kubernetesConfig *rest.Config
 var kubernetesClientSet *kubernetes.Clientset
 
 func main() {
-	dsn := "host=postgres-postgresql user=postgres password=12345aaa dbname=trader port=5432 sslmode=disable"
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	_ = db.AutoMigrate(&Trader{})
+	db = databaseInitialize()
+	_ = db.instance.AutoMigrate(&Trader{})
 
 	kubernetesConfig, _ = rest.InClusterConfig()
 	kubernetesClientSet, err = kubernetes.NewForConfig(kubernetesConfig)

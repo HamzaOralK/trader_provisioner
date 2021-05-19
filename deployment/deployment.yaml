@@ -30,3 +30,10 @@ spec:
           image: coiner/trader-provisioner:0.0.1
           ports:
             - containerPort: 8080
+          env:
+            - name: DB_HOST
+              value: postgres-postgresql
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: 12345aaa
