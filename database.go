@@ -29,7 +29,7 @@ func databaseInitialize() DB {
 		log.Println("DB Connection is successful")
 	}
 
-	return DB {
+	return DB{
 		instance: instance,
 	}
 

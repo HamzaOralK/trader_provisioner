@@ -8,8 +8,8 @@ import (
 
 type Trader struct {
 	gorm.Model
-	Name string `gorm:"primaryKey,index"`
-	TraderId string
+	Name         string `gorm:"primaryKey,index"`
+	TraderId     string
 	TradingModel string
 }
 
@@ -23,10 +23,13 @@ func (u *Trader) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type ProvisionRequest struct {
-	Name string `json:"name"`
+	Name         string `json:"name"`
 	TradingModel string `json:"tradingModel"`
 }
 
 type DeletionRequest struct {
 	Name string `json:"name"`
+}
+
+type Config struct {
 }

@@ -9,14 +9,15 @@ import (
 
 var db DB
 var err error
-var kubernetesConfig *rest.Config
 var kubernetesClientSet *kubernetes.Clientset
+
+const traderPrefix string = "trader-"
 
 func main() {
 	db = databaseInitialize()
 	_ = db.instance.AutoMigrate(&Trader{})
 
-	kubernetesConfig, _ = rest.InClusterConfig()
+	var kubernetesConfig, _ = rest.InClusterConfig()
 	kubernetesClientSet, err = kubernetes.NewForConfig(kubernetesConfig)
 	if err != nil {
 		panic(err.Error())

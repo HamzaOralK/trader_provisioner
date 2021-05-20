@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"net/http"
@@ -27,12 +26,19 @@ func DeletionHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Println("Deleting deployment...")
 			deletePolicy := metav1.DeletePropagationForeground
-			deploymentsClient := kubernetesClientSet.AppsV1().Deployments(apiv1.NamespaceDefault)
+			deploymentsClient, configMapClient := createClientSets()
+
 			if err := deploymentsClient.Delete(context.TODO(), "trader-"+tm.TraderId, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			}); err != nil {
-				panic(err)
+				log.Println(err)
 			}
+			if err := configMapClient.Delete(context.TODO(), "trader-"+tm.TraderId, metav1.DeleteOptions{
+				PropagationPolicy: &deletePolicy,
+			}); err != nil {
+				log.Println(err)
+			}
+
 			log.Println("Deleted deployment.")
 		}
 	}
