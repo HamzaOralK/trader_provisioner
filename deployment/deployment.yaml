@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: trader-provisioner
-          image: coiner/trader-provisioner:0.0.1
+          image: coiner/trader-provisioner:latest
           ports:
             - containerPort: 8080
           env:

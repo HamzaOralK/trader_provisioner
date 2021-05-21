@@ -1,4 +1,4 @@
 FROM debian
 COPY ./dist /app
-CMD chmod +x /app/build_linux
-ENTRYPOINT /app/build_linux
+CMD chmod +x /app/trader
+ENTRYPOINT /app/trader
