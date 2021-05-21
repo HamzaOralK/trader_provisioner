@@ -20,7 +20,7 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 	deploymentsClient, configMapClient := createClientSets()
 
 	deployment := createDeployment(resourceIdentifier)
-	configMap := createConfigMap(resourceIdentifier)
+	configMap := createConfigMap(resourceIdentifier, pr.Config)
 
 	trader := Trader{Name: pr.Name, TraderId: deploymentId, TradingModel: pr.TradingModel}
 	dbResult := db.instance.Create(&trader)
@@ -98,13 +98,13 @@ func createDeployment(resourceIdentifier string) *appsv1.Deployment {
 	}
 }
 
-func createConfigMap(resourceIdentifier string) *apiv1.ConfigMap {
+func createConfigMap(resourceIdentifier string, config string) *apiv1.ConfigMap {
 	return &apiv1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceIdentifier,
 		},
 		Data: map[string]string{
-			"config.json": "aaaaa",
+			"config.json": config,
 		},
 	}
 }

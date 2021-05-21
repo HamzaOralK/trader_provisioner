@@ -25,6 +25,7 @@ func (u *Trader) BeforeCreate(tx *gorm.DB) (err error) {
 type ProvisionRequest struct {
 	Name         string `json:"name"`
 	TradingModel string `json:"tradingModel"`
+	Config       string `json:"config"`
 }
 
 type DeletionRequest struct {
