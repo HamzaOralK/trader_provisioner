@@ -24,27 +24,27 @@ func DeletionHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf(msg)
 			http.Error(w, msg, http.StatusBadRequest)
 		} else {
-			log.Println("Deleting deployment...")
+			log.Println("deleting deployment")
 			deletePolicy := metav1.DeletePropagationForeground
 			deploymentsClient, configMapClient, serviceClient := createClientSets()
 
-			if err := deploymentsClient.Delete(context.TODO(), "trader-"+tm.TraderId, metav1.DeleteOptions{
+			if err := deploymentsClient.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			}); err != nil {
 				log.Println(err)
 			}
-			if err := configMapClient.Delete(context.TODO(), "trader-"+tm.TraderId, metav1.DeleteOptions{
+			if err := configMapClient.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			}); err != nil {
 				log.Println(err)
 			}
-			if err := serviceClient.Delete(context.TODO(), "trader-"+tm.TraderId, metav1.DeleteOptions{
+			if err := serviceClient.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			}); err != nil {
 				log.Println(err)
 			}
 
-			log.Println("Deleted deployment.")
+			log.Println("deleted deployment")
 		}
 	}
 

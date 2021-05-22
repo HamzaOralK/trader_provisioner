@@ -15,8 +15,10 @@ import (
 func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 	pr := ProvisionRequest{}
 	_ = json.NewDecoder(r.Body).Decode(&pr)
+
 	deploymentId := uuid.NewV4().String()
-	resourceIdentifier := traderPrefix + deploymentId
+	resourceIdentifier := config.TraderPrefix + deploymentId
+
 	deploymentsClient, configMapClient, serviceClient := createClientSets()
 
 	deployment := createDeployment(resourceIdentifier)
@@ -30,8 +32,8 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, dbResult.Error.Error(), http.StatusBadRequest)
 		return
 	} else {
-		log.Println("Record has been created")
-		log.Println("Creating deployment...")
+		log.Println("record has been created")
+		log.Println("creating deployment")
 		// TODO: Better error handling here maybe array of errors if any revert the changes
 		deploymentResult, err := deploymentsClient.Create(context.TODO(), deployment, metav1.CreateOptions{})
 		configMapResult, _ := configMapClient.Create(context.TODO(), configMap, metav1.CreateOptions{})
@@ -39,10 +41,10 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println(err)
 		}
-		log.Printf("Created deployment %q.\n", deploymentResult.GetObjectMeta().GetName())
-		log.Printf("Created config map %q.\n", configMapResult.GetObjectMeta().GetName())
-		log.Printf("Created config map %q.\n", serviceResult.GetObjectMeta().GetName())
-		response, _ := json.Marshal(ProvisionResponse{ Id: deploymentId })
+		log.Printf("created deployment %q", deploymentResult.GetObjectMeta().GetName())
+		log.Printf("created config map %q", configMapResult.GetObjectMeta().GetName())
+		log.Printf("created service %q", serviceResult.GetObjectMeta().GetName())
+		response, _ := json.Marshal(ProvisionResponse{Id: deploymentId})
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(response)
 	}
@@ -70,7 +72,7 @@ func createDeployment(resourceIdentifier string) *appsv1.Deployment {
 					Containers: []apiv1.Container{
 						{
 							Name:  "web",
-							Image: "nginx:1.12",
+							Image: config.TraderImage,
 							VolumeMounts: []apiv1.VolumeMount{
 								{
 									Name:      "trader-config",
@@ -78,11 +80,11 @@ func createDeployment(resourceIdentifier string) *appsv1.Deployment {
 									SubPath:   "config.json",
 								},
 								{
-									Name: "strategies-pvc",
+									Name:      "strategies-pvc",
 									MountPath: "/freqtrade/user_data/strategies",
 								},
 								{
-									Name: "notebooks-pvc",
+									Name:      "notebooks-pvc",
 									MountPath: "/freqtrade/user_data/notebooks",
 								},
 							},
@@ -90,9 +92,11 @@ func createDeployment(resourceIdentifier string) *appsv1.Deployment {
 								{
 									Name:          "http",
 									Protocol:      apiv1.ProtocolTCP,
-									ContainerPort: 80,
+									ContainerPort: config.TraderPort,
 								},
 							},
+							Command: []string{"freqtrade"},
+							Args:    []string{"trade", "--logfile", "/freqtrade/user_data/logs/freqtrade.log", "--db-url", "sqlite:////freqtrade/user_data/tradesv3.sqlite", "--config", "/freqtrade/user_data/config.json"},
 						},
 					},
 					Volumes: []apiv1.Volume{
@@ -150,13 +154,12 @@ func createService(resourceIdentifier string) *apiv1.Service {
 			Selector: map[string]string{
 				"trader": resourceIdentifier,
 			},
-			Ports: []apiv1.ServicePort {
+			Ports: []apiv1.ServicePort{
 				{
 					Protocol: apiv1.ProtocolTCP,
-					Port: 80,
+					Port:     config.TraderPort,
 				},
 			},
 		},
-
 	}
 }

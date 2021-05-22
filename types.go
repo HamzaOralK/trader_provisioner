@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"gorm.io/gorm"
+	"log"
+	"os"
+	"strconv"
 )
 
 type Trader struct {
@@ -25,7 +28,7 @@ func (u *Trader) BeforeCreate(tx *gorm.DB) (err error) {
 type ProvisionRequest struct {
 	Name         string `json:"name"`
 	TradingModel string `json:"tradingModel"`
-	Config       string `json:"config"`
+	Config        string `json:"config"`
 }
 
 type ProvisionResponse struct {
@@ -37,4 +40,17 @@ type DeletionRequest struct {
 }
 
 type Config struct {
+	TraderImage string
+	TraderPort  int32
+	TraderPrefix string
+}
+
+func initializeConfig() Config {
+	log.Printf("configuration initialized")
+	port, _ := strconv.ParseInt(os.Getenv("TRADER_PORT"), 10, 32)
+	return Config{
+		TraderImage: os.Getenv("TRADER_IMAGE"),
+		TraderPrefix: os.Getenv("TRADER_PREFIX"),
+		TraderPort:  int32(port),
+	}
 }

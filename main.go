@@ -10,8 +10,11 @@ import (
 var db DB
 var err error
 var kubernetesClientSet *kubernetes.Clientset
+var config Config
 
-const traderPrefix string = "trader-"
+func init() {
+	config = initializeConfig()
+}
 
 func main() {
 	db = databaseInitialize()

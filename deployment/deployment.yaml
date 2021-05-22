@@ -39,3 +39,9 @@ spec:
               value: postgres
             - name: DB_PASSWORD
               value: 12345aaa
+            - name: TRADER_PREFIX
+              value: "trader-"
+            - name: TRADER_IMAGE
+              value: ttrader:0.0.1
+            - name: TRADER_PORT
+              value: "8080"
