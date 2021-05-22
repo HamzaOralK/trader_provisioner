@@ -74,8 +74,16 @@ func createDeployment(resourceIdentifier string) *appsv1.Deployment {
 							VolumeMounts: []apiv1.VolumeMount{
 								{
 									Name:      "trader-config",
-									MountPath: "/config.json",
+									MountPath: "/freqtrade/user_data/config.json",
 									SubPath:   "config.json",
+								},
+								{
+									Name: "strategies-pvc",
+									MountPath: "/freqtrade/user_data/strategies",
+								},
+								{
+									Name: "notebooks-pvc",
+									MountPath: "/freqtrade/user_data/notebooks",
 								},
 							},
 							Ports: []apiv1.ContainerPort{
@@ -96,6 +104,22 @@ func createDeployment(resourceIdentifier string) *appsv1.Deployment {
 										Name: resourceIdentifier,
 									},
 									DefaultMode: pointer.Int32Ptr(0777),
+								},
+							},
+						},
+						{
+							Name: "notebooks-pvc",
+							VolumeSource: apiv1.VolumeSource{
+								PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "notebooks-pvc",
+								},
+							},
+						},
+						{
+							Name: "strategies-pvc",
+							VolumeSource: apiv1.VolumeSource{
+								PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "strategies-pvc",
 								},
 							},
 						},
