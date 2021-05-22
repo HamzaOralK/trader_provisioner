@@ -29,5 +29,6 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/provision", ProvisionHandler).Methods("POST")
 	r.HandleFunc("/deletion", DeletionHandler).Methods("POST")
+	r.HandleFunc("/update", UpdateConfigHandler).Methods("PUT")
 	http.ListenAndServe(":8080", r)
 }

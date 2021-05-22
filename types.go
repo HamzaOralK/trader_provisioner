@@ -11,23 +11,23 @@ import (
 
 type Trader struct {
 	gorm.Model
-	Name         string `gorm:"primaryKey,index"`
+	UserId       string `gorm:"primaryKey,index"`
 	TraderId     string
-	TradingModel string
+	Config        string
 }
 
 func (u *Trader) BeforeCreate(tx *gorm.DB) (err error) {
-	var temp = Trader{}
-	tx.Model(&Trader{}).Where("deleted_at IS NULL and name = ?", u.Name).First(&temp)
-	if temp != (Trader{}) {
-		err = errors.New(fmt.Sprintf("Can't save trader for user %s exists with id of %s", temp.Name, temp.TraderId))
+	var temp []Trader
+	var count int64
+	tx.Model(&Trader{}).Where("deleted_at IS NULL and user_id = ?", u.UserId).Find(&temp).Count(&count)
+	if count >= config.MaxTraderPerUser {
+		err = errors.New(fmt.Sprintf("Can't save trader for user %s, it has maximum pod capacity", temp[0].UserId))
 	}
 	return
 }
 
 type ProvisionRequest struct {
-	Name         string `json:"name"`
-	TradingModel string `json:"tradingModel"`
+	UserId       string `json:"userId"`
 	Config        string `json:"config"`
 }
 
@@ -36,13 +36,21 @@ type ProvisionResponse struct {
 }
 
 type DeletionRequest struct {
-	Name string `json:"name"`
+	UserId   string `json:"userId"`
+	TraderId string `json:"traderId"`
+}
+
+type UpdateConfigRequest struct {
+	UserId string `json:"userId"`
+	TraderId string `json:"traderId"`
+	Config string `json:"config"`
 }
 
 type Config struct {
 	TraderImage string
 	TraderPort  int32
 	TraderPrefix string
+	MaxTraderPerUser int64
 }
 
 func initializeConfig() Config {
@@ -52,5 +60,6 @@ func initializeConfig() Config {
 		TraderImage: os.Getenv("TRADER_IMAGE"),
 		TraderPrefix: os.Getenv("TRADER_PREFIX"),
 		TraderPort:  int32(port),
+		MaxTraderPerUser: 1,
 	}
 }

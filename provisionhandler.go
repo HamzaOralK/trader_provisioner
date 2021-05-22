@@ -25,7 +25,7 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 	configMap := createConfigMap(resourceIdentifier, pr.Config)
 	service := createService(resourceIdentifier)
 
-	trader := Trader{Name: pr.Name, TraderId: deploymentId, TradingModel: pr.TradingModel}
+	trader := Trader{UserId: pr.UserId, TraderId: deploymentId, Config: pr.Config}
 	dbResult := db.instance.Create(&trader)
 	if dbResult.Error != nil {
 		log.Printf(dbResult.Error.Error())
@@ -73,6 +73,13 @@ func createDeployment(resourceIdentifier string) *appsv1.Deployment {
 						{
 							Name:  "web",
 							Image: config.TraderImage,
+							Lifecycle: &apiv1.Lifecycle{
+								PreStop: &apiv1.Handler{
+									Exec: &apiv1.ExecAction{
+										Command: []string {"python3", "scripts/rest_client.py", "--config", "user_data/config.json", "forcesell", "all"},
+									},
+								},
+							},
 							VolumeMounts: []apiv1.VolumeMount{
 								{
 									Name:      "trader-config",

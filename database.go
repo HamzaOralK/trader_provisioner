@@ -13,7 +13,6 @@ type DB struct {
 }
 
 func databaseInitialize() DB {
-	// dsn := "host=postgres-postgresql user=postgres password=12345aaa dbname=trader port=5432 sslmode=disable"
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=5432 sslmode=disable",
 		os.Getenv("DB_HOST"),
