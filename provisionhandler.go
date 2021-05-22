@@ -17,26 +17,34 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&pr)
 	deploymentId := uuid.NewV4().String()
 	resourceIdentifier := traderPrefix + deploymentId
-	deploymentsClient, configMapClient := createClientSets()
+	deploymentsClient, configMapClient, serviceClient := createClientSets()
 
 	deployment := createDeployment(resourceIdentifier)
 	configMap := createConfigMap(resourceIdentifier, pr.Config)
+	service := createService(resourceIdentifier)
 
 	trader := Trader{Name: pr.Name, TraderId: deploymentId, TradingModel: pr.TradingModel}
 	dbResult := db.instance.Create(&trader)
 	if dbResult.Error != nil {
 		log.Printf(dbResult.Error.Error())
 		http.Error(w, dbResult.Error.Error(), http.StatusBadRequest)
+		return
 	} else {
 		log.Println("Record has been created")
 		log.Println("Creating deployment...")
+		// TODO: Better error handling here maybe array of errors if any revert the changes
 		deploymentResult, err := deploymentsClient.Create(context.TODO(), deployment, metav1.CreateOptions{})
 		configMapResult, _ := configMapClient.Create(context.TODO(), configMap, metav1.CreateOptions{})
+		serviceResult, _ := serviceClient.Create(context.TODO(), service, metav1.CreateOptions{})
 		if err != nil {
 			log.Println(err)
 		}
 		log.Printf("Created deployment %q.\n", deploymentResult.GetObjectMeta().GetName())
 		log.Printf("Created config map %q.\n", configMapResult.GetObjectMeta().GetName())
+		log.Printf("Created config map %q.\n", serviceResult.GetObjectMeta().GetName())
+		response, _ := json.Marshal(ProvisionResponse{ Id: deploymentId })
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(response)
 	}
 }
 
@@ -106,5 +114,25 @@ func createConfigMap(resourceIdentifier string, config string) *apiv1.ConfigMap 
 		Data: map[string]string{
 			"config.json": config,
 		},
+	}
+}
+
+func createService(resourceIdentifier string) *apiv1.Service {
+	return &apiv1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resourceIdentifier,
+		},
+		Spec: apiv1.ServiceSpec{
+			Selector: map[string]string{
+				"trader": resourceIdentifier,
+			},
+			Ports: []apiv1.ServicePort {
+				{
+					Protocol: apiv1.ProtocolTCP,
+					Port: 80,
+				},
+			},
+		},
+
 	}
 }

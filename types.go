@@ -28,6 +28,10 @@ type ProvisionRequest struct {
 	Config       string `json:"config"`
 }
 
+type ProvisionResponse struct {
+	Id string `json:"id"`
+}
+
 type DeletionRequest struct {
 	Name string `json:"name"`
 }

@@ -5,9 +5,11 @@ metadata:
 spec:
   selector:
     app: trader-provisioner
+  type: NodePort
   ports:
     - protocol: TCP
       port: 8080
+      nodePort: 30080
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,7 +29,7 @@ spec:
     spec:
       containers:
         - name: trader-provisioner
-          image: coiner/trader-provisioner:latest
+          image: coiner/trader-provisioner:0.0.1
           ports:
             - containerPort: 8080
           env:

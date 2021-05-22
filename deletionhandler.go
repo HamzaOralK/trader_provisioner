@@ -26,7 +26,7 @@ func DeletionHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Println("Deleting deployment...")
 			deletePolicy := metav1.DeletePropagationForeground
-			deploymentsClient, configMapClient := createClientSets()
+			deploymentsClient, configMapClient, serviceClient := createClientSets()
 
 			if err := deploymentsClient.Delete(context.TODO(), "trader-"+tm.TraderId, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
@@ -34,6 +34,11 @@ func DeletionHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 			}
 			if err := configMapClient.Delete(context.TODO(), "trader-"+tm.TraderId, metav1.DeleteOptions{
+				PropagationPolicy: &deletePolicy,
+			}); err != nil {
+				log.Println(err)
+			}
+			if err := serviceClient.Delete(context.TODO(), "trader-"+tm.TraderId, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			}); err != nil {
 				log.Println(err)
