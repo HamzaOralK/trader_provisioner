@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	cappsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
+	capiv1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/utils/pointer"
 	"log"
 	"net/http"
@@ -19,39 +22,31 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 	deploymentId := uuid.NewV4().String()
 	resourceIdentifier := config.TraderPrefix + deploymentId
 
-	deploymentsClient, configMapClient, serviceClient := createClientSets()
-
-	deployment := createDeployment(resourceIdentifier)
-	configMap := createConfigMap(resourceIdentifier, pr.Config)
-	service := createService(resourceIdentifier)
+	deploymentsInterface, configMapInterface, serviceInterface := createClientSets()
 
 	trader := Trader{UserId: pr.UserId, TraderId: deploymentId, Config: pr.Config}
-	dbResult := db.instance.Create(&trader)
-	if dbResult.Error != nil {
-		log.Printf(dbResult.Error.Error())
-		http.Error(w, dbResult.Error.Error(), http.StatusBadRequest)
-		return
-	} else {
-		log.Println("record has been created")
-		log.Println("creating deployment")
-		// TODO: Better error handling here maybe array of errors if any revert the changes
-		deploymentResult, err := deploymentsClient.Create(context.TODO(), deployment, metav1.CreateOptions{})
-		configMapResult, _ := configMapClient.Create(context.TODO(), configMap, metav1.CreateOptions{})
-		serviceResult, _ := serviceClient.Create(context.TODO(), service, metav1.CreateOptions{})
-		if err != nil {
-			log.Println(err)
+	_ = db.instance.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&trader).Error; err != nil {
+			log.Printf(err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return err
 		}
-		log.Printf("created deployment %q", deploymentResult.GetObjectMeta().GetName())
-		log.Printf("created config map %q", configMapResult.GetObjectMeta().GetName())
-		log.Printf("created service %q", serviceResult.GetObjectMeta().GetName())
+		deployment, dErr := createDeployment(resourceIdentifier, deploymentsInterface)
+		configMap, cErr := createConfigMap(resourceIdentifier, pr.Config, configMapInterface)
+		service, sErr := createService(resourceIdentifier, serviceInterface)
+		if dErr != nil || cErr != nil || sErr != nil {
+			deleteAll(resourceIdentifier, deploymentsInterface, configMapInterface, serviceInterface)
+		}
+		log.Printf("deployment %q with config map %q and service %q has been created", deployment.GetObjectMeta().GetName(), configMap.GetObjectMeta().GetName(), service.GetObjectMeta().GetName())
 		response, _ := json.Marshal(ProvisionResponse{Id: deploymentId})
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(response)
-	}
+		return nil
+	})
 }
 
-func createDeployment(resourceIdentifier string) *appsv1.Deployment {
-	return &appsv1.Deployment{
+func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.DeploymentInterface) (*appsv1.Deployment, error) {
+	deploymentTemplate := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceIdentifier,
 		},
@@ -139,9 +134,10 @@ func createDeployment(resourceIdentifier string) *appsv1.Deployment {
 			},
 		},
 	}
+	return deploymentInterface.Create(context.TODO(), deploymentTemplate, metav1.CreateOptions{})
 }
 
-func createConfigMap(resourceIdentifier string, config string) *apiv1.ConfigMap {
+func createConfigMapTemplate(resourceIdentifier string, config string) *apiv1.ConfigMap {
 	return &apiv1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceIdentifier,
@@ -152,8 +148,13 @@ func createConfigMap(resourceIdentifier string, config string) *apiv1.ConfigMap 
 	}
 }
 
-func createService(resourceIdentifier string) *apiv1.Service {
-	return &apiv1.Service{
+func createConfigMap(resourceIdentifier string, config string, configMapInterface capiv1.ConfigMapInterface) (*apiv1.ConfigMap, error) {
+	configMapTemplate := createConfigMapTemplate(resourceIdentifier, config)
+	return configMapInterface.Create(context.TODO(), configMapTemplate, metav1.CreateOptions{})
+}
+
+func createService(resourceIdentifier string, serviceInterface capiv1.ServiceInterface) (*apiv1.Service, error) {
+	serviceTemplate :=  &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceIdentifier,
 		},
@@ -169,4 +170,12 @@ func createService(resourceIdentifier string) *apiv1.Service {
 			},
 		},
 	}
+	return serviceInterface.Create(context.TODO(), serviceTemplate, metav1.CreateOptions{})
+}
+
+func deleteAll(resourceIdentifier string, deploymentInterface cappsv1.DeploymentInterface, configMapInterface capiv1.ConfigMapInterface, serviceInterface capiv1.ServiceInterface) {
+	deletePolicy := metav1.DeletePropagationForeground
+	_ = deploymentInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{ PropagationPolicy: &deletePolicy })
+	_ = configMapInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{ PropagationPolicy: &deletePolicy })
+	_ = serviceInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{ PropagationPolicy: &deletePolicy })
 }
