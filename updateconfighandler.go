@@ -21,7 +21,7 @@ func UpdateConfigHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		dbFindResult.Update("config", ucr.Config)
 		resourceIdentifier := config.TraderPrefix + ucr.TraderId
-		deploymentsClient, configMapClient, _ := createClientSets()
+		deploymentsClient, configMapClient, _, _ := createClientSets()
 		configMapClient.Update(context.TODO(), createConfigMapTemplate(resourceIdentifier, ucr.Config), metav1.UpdateOptions{})
 		data := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, time.Now().String())
 		deploymentsClient.Patch(context.TODO(), resourceIdentifier, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})

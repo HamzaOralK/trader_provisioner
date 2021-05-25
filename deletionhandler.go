@@ -26,23 +26,24 @@ func DeletionHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Println("deleting deployment")
 			deletePolicy := metav1.DeletePropagationForeground
-			deploymentsClient, configMapClient, serviceClient := createClientSets()
+			deploymentsInterface, configMapInterface, serviceInterface, ingressInterface := createClientSets()
 
-			if err := deploymentsClient.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
+			if err := deploymentsInterface.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			}); err != nil {
 				log.Println(err)
 			}
-			if err := configMapClient.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
+			if err := configMapInterface.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			}); err != nil {
 				log.Println(err)
 			}
-			if err := serviceClient.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
+			if err := serviceInterface.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			}); err != nil {
 				log.Println(err)
 			}
+			_, _ = deleteIngressPath(dr.TraderId, ingressInterface)
 
 			log.Println("deleted deployment")
 		}

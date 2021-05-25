@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	cappsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 	capiv1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	cnetworkingv1 "k8s.io/client-go/kubernetes/typed/networking/v1"
 	"k8s.io/utils/pointer"
 	"log"
 	"net/http"
@@ -22,7 +25,7 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 	deploymentId := uuid.NewV4().String()
 	resourceIdentifier := config.TraderPrefix + deploymentId
 
-	deploymentsInterface, configMapInterface, serviceInterface := createClientSets()
+	deploymentsInterface, configMapInterface, serviceInterface, ingressInterface := createClientSets()
 
 	trader := Trader{UserId: pr.UserId, TraderId: deploymentId, Config: pr.Config}
 	_ = db.instance.Transaction(func(tx *gorm.DB) error {
@@ -34,10 +37,14 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 		deployment, dErr := createDeployment(resourceIdentifier, deploymentsInterface)
 		configMap, cErr := createConfigMap(resourceIdentifier, pr.Config, configMapInterface)
 		service, sErr := createService(resourceIdentifier, serviceInterface)
-		if dErr != nil || cErr != nil || sErr != nil {
+		ingress, iErr := insertIngressPath(resourceIdentifier, deploymentId, ingressInterface)
+
+		if dErr != nil || cErr != nil || sErr != nil || iErr != nil {
 			deleteAll(resourceIdentifier, deploymentsInterface, configMapInterface, serviceInterface)
+			_, _ = deleteIngressPath(deploymentId, ingressInterface)
 		}
-		log.Printf("deployment %q with config map %q and service %q has been created", deployment.GetObjectMeta().GetName(), configMap.GetObjectMeta().GetName(), service.GetObjectMeta().GetName())
+		log.Printf("deployment %q with config map %q and service %q has been created, ingress inserted into %q",
+			deployment.GetObjectMeta().GetName(), configMap.GetObjectMeta().GetName(), service.GetObjectMeta().GetName(), ingress.GetObjectMeta().GetName())
 		response, _ := json.Marshal(ProvisionResponse{Id: deploymentId})
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(response)
@@ -171,6 +178,39 @@ func createService(resourceIdentifier string, serviceInterface capiv1.ServiceInt
 		},
 	}
 	return serviceInterface.Create(context.TODO(), serviceTemplate, metav1.CreateOptions{})
+}
+
+func insertIngressPath(resourceIdentifier string, path string, ingressInterface cnetworkingv1.IngressInterface) (*networkingv1.Ingress, error) {
+	ingress, _ := ingressInterface.Get(context.TODO(), config.TraderIngressName, metav1.GetOptions{})
+	pt := networkingv1.PathTypePrefix
+	newPath :=  networkingv1.HTTPIngressPath{
+		Path: fmt.Sprintf("/%s", path),
+		PathType: &pt,
+		Backend: networkingv1.IngressBackend{
+			Service: &networkingv1.IngressServiceBackend{
+				Name: resourceIdentifier,
+				Port: networkingv1.ServiceBackendPort{
+					Number: 8080,
+				},
+			},
+		},
+	}
+	ingress.Spec.Rules[0].HTTP.Paths = append(ingress.Spec.Rules[0].HTTP.Paths, newPath)
+	return ingressInterface.Update(context.TODO(), ingress, metav1.UpdateOptions{})
+}
+
+func deleteIngressPath(path string, ingressInterface cnetworkingv1.IngressInterface) (*networkingv1.Ingress, error) {
+	ingress, _ := ingressInterface.Get(context.TODO(), config.TraderIngressName, metav1.GetOptions{})
+	paths := ingress.Spec.Rules[0].HTTP.Paths
+	var newPaths []networkingv1.HTTPIngressPath
+	for _, x := range paths {
+		if x.Path != fmt.Sprintf("/%s", path) {
+			newPaths = append(newPaths, x)
+		}
+	}
+	log.Printf("%+v", newPaths)
+	ingress.Spec.Rules[0].HTTP.Paths = newPaths
+	return ingressInterface.Update(context.TODO(), ingress, metav1.UpdateOptions{})
 }
 
 func deleteAll(resourceIdentifier string, deploymentInterface cappsv1.DeploymentInterface, configMapInterface capiv1.ConfigMapInterface, serviceInterface capiv1.ServiceInterface) {

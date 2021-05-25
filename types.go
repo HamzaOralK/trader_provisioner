@@ -50,6 +50,7 @@ type Config struct {
 	TraderImage string
 	TraderPort  int32
 	TraderPrefix string
+	TraderIngressName string
 	MaxTraderPerUser int64
 }
 
@@ -60,6 +61,7 @@ func initializeConfig() Config {
 		TraderImage: os.Getenv("TRADER_IMAGE"),
 		TraderPrefix: os.Getenv("TRADER_PREFIX"),
 		TraderPort:  int32(port),
+		TraderIngressName: os.Getenv("TRADER_INGRESS_NAME"),
 		MaxTraderPerUser: 1,
 	}
 }
