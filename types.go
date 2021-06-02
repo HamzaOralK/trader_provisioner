@@ -27,8 +27,8 @@ func (u *Trader) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type ProvisionRequest struct {
-	UserId       string `json:"userId"`
-	Config        string `json:"config"`
+	UserId       string `json:"user_id"`
+	Config        string `json:"configuration"`
 }
 
 type ProvisionResponse struct {
@@ -36,14 +36,14 @@ type ProvisionResponse struct {
 }
 
 type DeletionRequest struct {
-	UserId   string `json:"userId"`
-	TraderId string `json:"traderId"`
+	UserId   string `json:"user_id"`
+	TraderId string `json:"trader_id"`
 }
 
 type UpdateConfigRequest struct {
-	UserId string `json:"userId"`
-	TraderId string `json:"traderId"`
-	Config string `json:"config"`
+	UserId string `json:"user_id"`
+	TraderId string `json:"trader_id"`
+	Config string `json:"configuration"`
 }
 
 type Config struct {
