@@ -38,10 +38,25 @@ Response
 
 # Building and Running
 
-go build -o ./dist \
-eval $(minikube docker-env) \
-make dockerize \
-k apply -f deployment
+````shell
+$ go build -o ./dist && eval $(minikube docker-env) && make dockerize 
+# deploy postgres
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+$ helm install -f helm-values/postgres.yaml postgres bitnami/postgresql
+# deploy model-manager for strategy deployment
+$ kubectl apply -f deployments/model-manager
+-------
+## go to notebook & strategies folder
+$ cd "wherever is the notebooks"
+$ for i in $(ls *py); do k cp $i <pod_adı>:/tmp/strategies/$i; done;
+$ for i in $(ls *pkl); do k cp $i <pod_adı>:/tmp/notebooks/$i; done;
+## go back to repository, wait for postgres and deploy trader
+$ kubectl apply -f deployments/trader
 
-minikube service --url postgres-postgresql \
-minikube service --url trader-provisioner
+## Expose necessary service for testing
+$ minikube service --url postgres-postgresql 
+$ minikube service --url trader-provisioner
+````
+
+
+

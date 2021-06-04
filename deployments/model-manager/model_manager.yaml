@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-manager
+  labels:
+    app: model-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: model-manager
+  template:
+    metadata:
+      labels:
+        app: model-manager
+    spec:
+      containers:
+        - name: model-manager
+          image: debian:latest
+          volumeMounts:
+            - mountPath: "/tmp/strategies"
+              name: strategies-pvc
+            - mountPath: "/tmp/notebooks"
+              name: notebooks-pvc
+          command: ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]
+      volumes:
+        - name: strategies-pvc
+          persistentVolumeClaim:
+            claimName: strategies-pvc
+        - name: notebooks-pvc
+          persistentVolumeClaim:
+            claimName: notebooks-pvc

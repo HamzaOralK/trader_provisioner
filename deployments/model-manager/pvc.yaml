@@ -1,0 +1,67 @@
+################
+## Strategies
+################
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: strategies-pv
+  namespace: default
+spec:
+  claimRef:
+    name: strategies-pvc
+    namespace: default
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: "standard"
+  hostPath:
+    path: "/mnt/data/strategies"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strategies-pvc
+  namespace: default
+spec:
+  storageClassName: "standard"
+  volumeName: strategies-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500M
+---
+################
+## Notebooks
+################
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: notebooks-pv
+  namespace: default
+spec:
+  claimRef:
+    name: notebooks-pvc
+    namespace: default
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: "standard"
+  hostPath:
+    path: "/mnt/data/notebooks"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notebooks-pvc
+  namespace: default
+spec:
+  storageClassName: "standard"
+  volumeName: notebooks-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500M

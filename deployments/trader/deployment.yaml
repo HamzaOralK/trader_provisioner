@@ -39,6 +39,8 @@ spec:
               value: postgres
             - name: DB_PASSWORD
               value: 12345aaa
+            - name: DB_SCHEMA
+              value: postgres
             - name: TRADER_PREFIX
               value: "trader-"
             - name: TRADER_IMAGE

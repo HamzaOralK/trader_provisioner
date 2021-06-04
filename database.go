@@ -18,7 +18,7 @@ func databaseInitialize() DB {
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
-		"trader",
+		os.Getenv("DB_SCHEMA"),
 	)
 
 	instance, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
