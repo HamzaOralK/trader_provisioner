@@ -48,8 +48,8 @@ $ kubectl apply -f deployments/model-manager
 -------
 ## go to notebook & strategies folder
 $ cd "wherever is the notebooks"
-$ for i in $(ls *py); do k cp $i <pod_adı>:/tmp/strategies/$i; done;
-$ for i in $(ls *pkl); do k cp $i <pod_adı>:/tmp/notebooks/$i; done;
+$ for i in $(ls *py); do kubectl cp $i <pod_adı>:/tmp/strategies/$i; done;
+$ for i in $(ls *pkl); do kubectl cp $i <pod_adı>:/tmp/notebooks/$i; done;
 ## go back to repository, wait for postgres and deploy trader
 $ kubectl apply -f deployments/trader
 
