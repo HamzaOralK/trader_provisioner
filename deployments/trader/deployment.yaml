@@ -27,6 +27,7 @@ spec:
       labels:
         app: trader-provisioner
     spec:
+      serviceAccountName: trader-provisioner
       containers:
         - name: trader-provisioner
           image: coiner/trader-provisioner:0.0.1
@@ -40,7 +41,7 @@ spec:
             - name: DB_PASSWORD
               value: 12345aaa
             - name: DB_SCHEMA
-              value: postgres
+              value: trader
             - name: TRADER_PREFIX
               value: "trader-"
             - name: TRADER_IMAGE

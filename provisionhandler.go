@@ -208,7 +208,6 @@ func deleteIngressPath(path string, ingressInterface cnetworkingv1.IngressInterf
 			newPaths = append(newPaths, x)
 		}
 	}
-	log.Printf("%+v", newPaths)
 	ingress.Spec.Rules[0].HTTP.Paths = newPaths
 	return ingressInterface.Update(context.TODO(), ingress, metav1.UpdateOptions{})
 }

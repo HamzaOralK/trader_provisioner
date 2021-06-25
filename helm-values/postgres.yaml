@@ -2,3 +2,6 @@ service:
   type: NodePort
   nodePort: 31333
 postgresqlPassword: 12345aaa
+initdbScripts:
+  init.sql: |
+    CREATE DATABASE trader;
