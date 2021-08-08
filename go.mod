@@ -3,8 +3,10 @@ module github.com/Coinoner/trader_provisioner
 go 1.16
 
 require (
+	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgproto3/v2 v2.0.7 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect

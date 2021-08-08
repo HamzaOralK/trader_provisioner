@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -30,5 +31,9 @@ func main() {
 	r.HandleFunc("/provision", ProvisionHandler).Methods("POST")
 	r.HandleFunc("/deletion", DeletionHandler).Methods("POST")
 	r.HandleFunc("/update", UpdateConfigHandler).Methods("PUT")
-	http.ListenAndServe(":8080", r)
+
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{"HEAD", "POST", "PUT", "OPTIONS"})
+
+	http.ListenAndServe(":8080", handlers.CORS(originsOk, methodsOk)(r))
 }
