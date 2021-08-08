@@ -28,7 +28,7 @@ Response
 }
 ```
 ## Delete a Trader
-```POST``` /delete 
+```POST``` /deletion 
 ```json
 {
 	"user_id": "user_id",
