@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,8 +17,6 @@ import (
 	capiv1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	cnetworkingv1 "k8s.io/client-go/kubernetes/typed/networking/v1"
 	"k8s.io/utils/pointer"
-	"log"
-	"net/http"
 )
 
 func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +79,7 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 							Lifecycle: &apiv1.Lifecycle{
 								PreStop: &apiv1.Handler{
 									Exec: &apiv1.ExecAction{
-										Command: []string {"python3", "scripts/rest_client.py", "--config", "user_data/config.json", "forcesell", "all"},
+										Command: []string{"python3", "scripts/rest_client.py", "--config", "user_data/config.json", "forcesell", "all"},
 									},
 								},
 							},
@@ -161,7 +162,7 @@ func createConfigMap(resourceIdentifier string, config string, configMapInterfac
 }
 
 func createService(resourceIdentifier string, serviceInterface capiv1.ServiceInterface) (*apiv1.Service, error) {
-	serviceTemplate :=  &apiv1.Service{
+	serviceTemplate := &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceIdentifier,
 		},
@@ -183,8 +184,8 @@ func createService(resourceIdentifier string, serviceInterface capiv1.ServiceInt
 func insertIngressPath(resourceIdentifier string, path string, ingressInterface cnetworkingv1.IngressInterface) (*networkingv1.Ingress, error) {
 	ingress, _ := ingressInterface.Get(context.TODO(), config.TraderIngressName, metav1.GetOptions{})
 	pt := networkingv1.PathTypePrefix
-	newPath :=  networkingv1.HTTPIngressPath{
-		Path: fmt.Sprintf("/%s", path),
+	newPath := networkingv1.HTTPIngressPath{
+		Path:     fmt.Sprintf("/%s", path),
 		PathType: &pt,
 		Backend: networkingv1.IngressBackend{
 			Service: &networkingv1.IngressServiceBackend{
@@ -214,7 +215,7 @@ func deleteIngressPath(path string, ingressInterface cnetworkingv1.IngressInterf
 
 func deleteAll(resourceIdentifier string, deploymentInterface cappsv1.DeploymentInterface, configMapInterface capiv1.ConfigMapInterface, serviceInterface capiv1.ServiceInterface) {
 	deletePolicy := metav1.DeletePropagationForeground
-	_ = deploymentInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{ PropagationPolicy: &deletePolicy })
-	_ = configMapInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{ PropagationPolicy: &deletePolicy })
-	_ = serviceInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{ PropagationPolicy: &deletePolicy })
+	_ = deploymentInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
+	_ = configMapInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
+	_ = serviceInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
 }
