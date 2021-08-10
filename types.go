@@ -64,6 +64,6 @@ func initializeConfig() Config {
 		TraderPort:        int32(port),
 		TraderIngressName: os.Getenv("TRADER_INGRESS_NAME"),
 		ImagePullSecrets:  os.Getenv("IMAGE_PULL_SECRETS"),
-		MaxTraderPerUser:  1,
+		MaxTraderPerUser:  100,
 	}
 }
