@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -22,7 +21,7 @@ func (u *Trader) BeforeCreate(tx *gorm.DB) (err error) {
 	var count int64
 	tx.Model(&Trader{}).Where("deleted_at IS NULL and user_id = ?", u.UserId).Find(&temp).Count(&count)
 	if count >= config.MaxTraderPerUser {
-		err = errors.New(fmt.Sprintf("Can't save trader for user %s, it has maximum pod capacity", temp[0].UserId))
+		err = fmt.Errorf("can't save trader for user %s, it has maximum pod capacity", temp[0].UserId)
 	}
 	return
 }
@@ -52,6 +51,7 @@ type Config struct {
 	TraderPort        int32
 	TraderPrefix      string
 	TraderIngressName string
+	ImagePullSecrets  string
 	MaxTraderPerUser  int64
 }
 
@@ -63,6 +63,7 @@ func initializeConfig() Config {
 		TraderPrefix:      os.Getenv("TRADER_PREFIX"),
 		TraderPort:        int32(port),
 		TraderIngressName: os.Getenv("TRADER_INGRESS_NAME"),
+		ImagePullSecrets:  os.Getenv("IMAGE_PULL_SECRETS"),
 		MaxTraderPerUser:  1,
 	}
 }

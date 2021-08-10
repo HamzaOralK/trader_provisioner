@@ -31,7 +31,7 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 	trader := Trader{UserId: pr.UserId, TraderId: deploymentId, Config: pr.Config}
 	_ = db.instance.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&trader).Error; err != nil {
-			log.Printf(err.Error())
+			log.Println(err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return err
 		}
@@ -72,6 +72,7 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 					},
 				},
 				Spec: apiv1.PodSpec{
+					ImagePullSecrets: []apiv1.LocalObjectReference{{Name: config.ImagePullSecrets}},
 					Containers: []apiv1.Container{
 						{
 							Name:  "web",
