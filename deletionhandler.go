@@ -44,7 +44,11 @@ func DeletionHandler(w http.ResponseWriter, r *http.Request) {
 			}); err != nil {
 				log.Println(err)
 			}
-			_, _ = deleteIngressPath(dr.TraderId, ingressInterface)
+			if err := ingressInterface.Delete(context.TODO(), config.TraderPrefix+tm.TraderId, metav1.DeleteOptions{
+				PropagationPolicy: &deletePolicy,
+			}); err != nil {
+				log.Println(err)
+			}
 
 			log.Println("deleted deployment")
 		}

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -38,11 +37,10 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 		deployment, dErr := createDeployment(resourceIdentifier, deploymentsInterface)
 		configMap, cErr := createConfigMap(resourceIdentifier, pr.Config, configMapInterface)
 		service, sErr := createService(resourceIdentifier, serviceInterface)
-		ingress, iErr := insertIngressPath(resourceIdentifier, deploymentId, ingressInterface)
+		ingress, iErr := createIngress(resourceIdentifier, deploymentId, ingressInterface)
 
 		if dErr != nil || cErr != nil || sErr != nil || iErr != nil {
-			deleteAll(resourceIdentifier, deploymentsInterface, configMapInterface, serviceInterface)
-			_, _ = deleteIngressPath(deploymentId, ingressInterface)
+			deleteAll(resourceIdentifier, deploymentsInterface, configMapInterface, serviceInterface, ingressInterface)
 		}
 		log.Printf("deployment %q with config map %q and service %q has been created, ingress inserted into %q",
 			deployment.GetObjectMeta().GetName(), configMap.GetObjectMeta().GetName(), service.GetObjectMeta().GetName(), ingress.GetObjectMeta().GetName())
@@ -182,11 +180,11 @@ func createService(resourceIdentifier string, serviceInterface capiv1.ServiceInt
 	return serviceInterface.Create(context.TODO(), serviceTemplate, metav1.CreateOptions{})
 }
 
-func insertIngressPath(resourceIdentifier string, path string, ingressInterface cnetworkingv1.IngressInterface) (*networkingv1.Ingress, error) {
-	ingress, _ := ingressInterface.Get(context.TODO(), config.TraderIngressName, metav1.GetOptions{})
+func createIngress(resourceIdentifier string, id string, ingressInterface cnetworkingv1.IngressInterface) (*networkingv1.Ingress, error) {
+
 	pt := networkingv1.PathTypePrefix
-	newPath := networkingv1.HTTPIngressPath{
-		Path:     fmt.Sprintf("/%s", path),
+	path := networkingv1.HTTPIngressPath{
+		Path:     "/",
 		PathType: &pt,
 		Backend: networkingv1.IngressBackend{
 			Service: &networkingv1.IngressServiceBackend{
@@ -197,26 +195,52 @@ func insertIngressPath(resourceIdentifier string, path string, ingressInterface 
 			},
 		},
 	}
-	ingress.Spec.Rules[0].HTTP.Paths = append(ingress.Spec.Rules[0].HTTP.Paths, newPath)
-	return ingressInterface.Update(context.TODO(), ingress, metav1.UpdateOptions{})
-}
 
-func deleteIngressPath(path string, ingressInterface cnetworkingv1.IngressInterface) (*networkingv1.Ingress, error) {
-	ingress, _ := ingressInterface.Get(context.TODO(), config.TraderIngressName, metav1.GetOptions{})
-	paths := ingress.Spec.Rules[0].HTTP.Paths
-	var newPaths []networkingv1.HTTPIngressPath
-	for _, x := range paths {
-		if x.Path != fmt.Sprintf("/%s", path) {
-			newPaths = append(newPaths, x)
-		}
+	om := metav1.ObjectMeta{
+		Name: resourceIdentifier,
+		Annotations: map[string]string{
+			"cert-manager.io/custer-issuer": config.CluserCertificate,
+		},
 	}
-	ingress.Spec.Rules[0].HTTP.Paths = newPaths
-	return ingressInterface.Update(context.TODO(), ingress, metav1.UpdateOptions{})
+
+	specRules := []networkingv1.IngressRule{
+		networkingv1.IngressRule{
+			Host: id + "." + config.Hostname,
+			IngressRuleValue: networkingv1.IngressRuleValue{
+				HTTP: &networkingv1.HTTPIngressRuleValue{
+					Paths: []networkingv1.HTTPIngressPath{
+						path,
+					},
+				},
+			},
+		},
+	}
+
+	specTLS := []networkingv1.IngressTLS{
+		networkingv1.IngressTLS{
+			Hosts: []string {
+					id + "." + config.Hostname,
+			},
+			SecretName: config.CluserCertificate,
+		},
+	}
+
+	ingress := &networkingv1.Ingress{
+		ObjectMeta: om,
+		Spec: networkingv1.IngressSpec{
+			Rules: specRules,
+			TLS:   specTLS,
+		},
+	}
+
+	return ingressInterface.Create(context.TODO(), ingress, metav1.CreateOptions{})
 }
 
-func deleteAll(resourceIdentifier string, deploymentInterface cappsv1.DeploymentInterface, configMapInterface capiv1.ConfigMapInterface, serviceInterface capiv1.ServiceInterface) {
+
+func deleteAll(resourceIdentifier string, deploymentInterface cappsv1.DeploymentInterface, configMapInterface capiv1.ConfigMapInterface, serviceInterface capiv1.ServiceInterface, ingressInterface cnetworkingv1.IngressInterface ) {
 	deletePolicy := metav1.DeletePropagationForeground
 	_ = deploymentInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
 	_ = configMapInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
 	_ = serviceInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
+	_ = ingressInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
 }

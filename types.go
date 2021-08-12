@@ -53,6 +53,8 @@ type Config struct {
 	TraderIngressName string
 	ImagePullSecrets  string
 	MaxTraderPerUser  int64
+	CluserCertificate string
+	Hostname          string
 }
 
 func initializeConfig() Config {
@@ -64,6 +66,8 @@ func initializeConfig() Config {
 		TraderPort:        int32(port),
 		TraderIngressName: os.Getenv("TRADER_INGRESS_NAME"),
 		ImagePullSecrets:  os.Getenv("IMAGE_PULL_SECRETS"),
+		CluserCertificate: os.Getenv("CLUSTER_CERTIFICATE"),
+		Hostname:          os.Getenv("HOSTNAME"),
 		MaxTraderPerUser:  100,
 	}
 }

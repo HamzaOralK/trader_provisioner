@@ -5,6 +5,6 @@ compile:
 remove-build-docker:
 	eval $(minikube docker-env)
 	if [[ $$(docker images -q coiner/trader-provisioner:0.0.1 2> /dev/null) != "" ]]; then docker image rm coiner/trader-provisioner:0.0.1; fi;
-	docker build -t registry.digitalocean.com/coinoner-application/trader-provisioner:latest .
+	docker build -t registry.digitalocean.com/coinoner-application/trader-provisioner:0.0.2 .
 
 dockerize: compile remove-build-docker
