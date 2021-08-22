@@ -14,7 +14,7 @@ spec:
     storage: 1Gi
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"
+  storageClassName: "do-block-storage"
   hostPath:
     path: "/mnt/data/strategies"
 ---
@@ -24,7 +24,7 @@ metadata:
   name: strategies-pvc
   namespace: default
 spec:
-  storageClassName: "standard"
+  storageClassName: "do-block-storage"
   volumeName: strategies-pv
   accessModes:
     - ReadWriteMany

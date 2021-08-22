@@ -16,13 +16,13 @@ func DeletionHandler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&dr)
 	dbFindResult := db.instance.Where("user_id = ? AND trader_id = ?", dr.UserId, dr.TraderId).First(&tm)
 	if dbFindResult.Error != nil {
-		log.Printf(dbFindResult.Error.Error())
+		log.Println(dbFindResult.Error.Error())
 		http.Error(w, dbFindResult.Error.Error(), http.StatusBadRequest)
 	} else {
 		dbDeleteResult := db.instance.Delete(&tm)
 		if dbDeleteResult.Error != nil {
 			msg := fmt.Sprintf("could not delete trader for user %s, with ID of %s", tm.UserId, tm.TraderId)
-			log.Printf(msg)
+			log.Println(msg)
 			http.Error(w, msg, http.StatusBadRequest)
 		} else {
 			log.Println("deleting deployment")

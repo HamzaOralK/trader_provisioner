@@ -55,6 +55,9 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 	deploymentTemplate := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceIdentifier,
+			Annotations: map[string]string{
+				"application": "trader",
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: pointer.Int32Ptr(1),
@@ -88,14 +91,16 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 									MountPath: "/freqtrade/user_data/config.json",
 									SubPath:   "config.json",
 								},
-								{
-									Name:      "strategies-pvc",
-									MountPath: "/freqtrade/user_data/strategies",
-								},
-								{
-									Name:      "notebooks-pvc",
-									MountPath: "/freqtrade/user_data/notebooks",
-								},
+								/*
+									{
+										Name:      "strategies-pvc",
+										MountPath: "/freqtrade/user_data/strategies",
+									},
+									{
+										Name:      "notebooks-pvc",
+										MountPath: "/freqtrade/user_data/notebooks",
+									},
+								*/
 							},
 							Ports: []apiv1.ContainerPort{
 								{
@@ -120,22 +125,24 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 								},
 							},
 						},
-						{
-							Name: "notebooks-pvc",
-							VolumeSource: apiv1.VolumeSource{
-								PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "notebooks-pvc",
+						/*
+							{
+								Name: "notebooks-pvc",
+								VolumeSource: apiv1.VolumeSource{
+									PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+										ClaimName: "notebooks-pvc",
+									},
 								},
 							},
-						},
-						{
-							Name: "strategies-pvc",
-							VolumeSource: apiv1.VolumeSource{
-								PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "strategies-pvc",
+							{
+								Name: "strategies-pvc",
+								VolumeSource: apiv1.VolumeSource{
+									PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+										ClaimName: "strategies-pvc",
+									},
 								},
 							},
-						},
+						*/
 					},
 				},
 			},
@@ -148,6 +155,9 @@ func createConfigMapTemplate(resourceIdentifier string, config string) *apiv1.Co
 	return &apiv1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceIdentifier,
+			Annotations: map[string]string{
+				"application": "trader",
+			},
 		},
 		Data: map[string]string{
 			"config.json": config,
@@ -164,6 +174,9 @@ func createService(resourceIdentifier string, serviceInterface capiv1.ServiceInt
 	serviceTemplate := &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceIdentifier,
+			Annotations: map[string]string{
+				"application": "trader",
+			},
 		},
 		Spec: apiv1.ServiceSpec{
 			Selector: map[string]string{
@@ -200,11 +213,12 @@ func createIngress(resourceIdentifier string, id string, ingressInterface cnetwo
 		Name: resourceIdentifier,
 		Annotations: map[string]string{
 			"cert-manager.io/custer-issuer": config.CluserCertificate,
+			"application":                   "trader",
 		},
 	}
 
 	specRules := []networkingv1.IngressRule{
-		networkingv1.IngressRule{
+		{
 			Host: id + "." + config.Hostname,
 			IngressRuleValue: networkingv1.IngressRuleValue{
 				HTTP: &networkingv1.HTTPIngressRuleValue{
@@ -217,9 +231,9 @@ func createIngress(resourceIdentifier string, id string, ingressInterface cnetwo
 	}
 
 	specTLS := []networkingv1.IngressTLS{
-		networkingv1.IngressTLS{
-			Hosts: []string {
-					id + "." + config.Hostname,
+		{
+			Hosts: []string{
+				id + "." + config.Hostname,
 			},
 			SecretName: config.CluserCertificate,
 		},
@@ -236,8 +250,7 @@ func createIngress(resourceIdentifier string, id string, ingressInterface cnetwo
 	return ingressInterface.Create(context.TODO(), ingress, metav1.CreateOptions{})
 }
 
-
-func deleteAll(resourceIdentifier string, deploymentInterface cappsv1.DeploymentInterface, configMapInterface capiv1.ConfigMapInterface, serviceInterface capiv1.ServiceInterface, ingressInterface cnetworkingv1.IngressInterface ) {
+func deleteAll(resourceIdentifier string, deploymentInterface cappsv1.DeploymentInterface, configMapInterface capiv1.ConfigMapInterface, serviceInterface capiv1.ServiceInterface, ingressInterface cnetworkingv1.IngressInterface) {
 	deletePolicy := metav1.DeletePropagationForeground
 	_ = deploymentInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
 	_ = configMapInterface.Delete(context.TODO(), resourceIdentifier, metav1.DeleteOptions{PropagationPolicy: &deletePolicy})
