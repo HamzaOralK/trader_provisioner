@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	cappsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 	capiv1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -91,22 +92,18 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 									MountPath: "/freqtrade/user_data/config.json",
 									SubPath:   "config.json",
 								},
-								/*
-									{
-										Name:      "strategies-pvc",
-										MountPath: "/freqtrade/user_data/strategies",
-									},
-									{
-										Name:      "notebooks-pvc",
-										MountPath: "/freqtrade/user_data/notebooks",
-									},
-								*/
 							},
 							Ports: []apiv1.ContainerPort{
 								{
 									Name:          "http",
 									Protocol:      apiv1.ProtocolTCP,
 									ContainerPort: config.TraderPort,
+								},
+							},
+							Resources: apiv1.ResourceRequirements{
+								Requests: apiv1.ResourceList{
+									apiv1.ResourceCPU:    resource.MustParse("500m"),
+									apiv1.ResourceMemory: resource.MustParse("500Mi"),
 								},
 							},
 							Command: []string{"freqtrade"},
@@ -125,24 +122,6 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 								},
 							},
 						},
-						/*
-							{
-								Name: "notebooks-pvc",
-								VolumeSource: apiv1.VolumeSource{
-									PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-										ClaimName: "notebooks-pvc",
-									},
-								},
-							},
-							{
-								Name: "strategies-pvc",
-								VolumeSource: apiv1.VolumeSource{
-									PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
-										ClaimName: "strategies-pvc",
-									},
-								},
-							},
-						*/
 					},
 				},
 			},
