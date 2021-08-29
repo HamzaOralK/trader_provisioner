@@ -192,7 +192,7 @@ func createIngress(resourceIdentifier string, id string, ingressInterface cnetwo
 		Name: resourceIdentifier,
 		Annotations: map[string]string{
 			"kubernetes.io/ingress.class":   "nginx",
-			"cert-manager.io/custer-issuer": config.ClusterCertificate,
+			"cert-manager.io/issuer": config.ClusterCertificate,
 			"application":                   "trader",
 		},
 	}
