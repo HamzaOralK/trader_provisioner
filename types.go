@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"k8s.io/client-go/kubernetes"
 	"log"
 	"os"
 	"strconv"
@@ -47,14 +48,16 @@ type UpdateConfigRequest struct {
 }
 
 type Config struct {
-	TraderImage       string
-	TraderPort        int32
-	TraderPrefix      string
-	TraderIngressName string
-	ImagePullSecrets  string
-	MaxTraderPerUser  int64
-	CluserCertificate string
-	Hostname          string
+	TraderImage        string
+	TraderPort         int32
+	TraderPrefix       string
+	TraderIngressName  string
+	ImagePullSecrets   string
+	MaxTraderPerUser   int64
+	ClusterCertificate string
+	Hostname           string
+	db                 DB
+	kubernetesClientSet *kubernetes.Clientset
 }
 
 func initializeConfig() Config {
@@ -66,7 +69,7 @@ func initializeConfig() Config {
 		TraderPort:        int32(port),
 		TraderIngressName: os.Getenv("TRADER_INGRESS_NAME"),
 		ImagePullSecrets:  os.Getenv("IMAGE_PULL_SECRETS"),
-		CluserCertificate: os.Getenv("CLUSTER_CERTIFICATE"),
+		ClusterCertificate: os.Getenv("CLUSTER_CERTIFICATE"),
 		Hostname:          os.Getenv("HOSTNAME"),
 		MaxTraderPerUser:  100,
 	}

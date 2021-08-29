@@ -29,7 +29,7 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 	deploymentsInterface, configMapInterface, serviceInterface, ingressInterface := createClientSets()
 
 	trader := Trader{UserId: pr.UserId, TraderId: deploymentId, Config: pr.Config}
-	_ = db.instance.Transaction(func(tx *gorm.DB) error {
+	_ = config.db.instance.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&trader).Error; err != nil {
 			log.Println(err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -191,7 +191,8 @@ func createIngress(resourceIdentifier string, id string, ingressInterface cnetwo
 	om := metav1.ObjectMeta{
 		Name: resourceIdentifier,
 		Annotations: map[string]string{
-			"cert-manager.io/custer-issuer": config.CluserCertificate,
+			"kubernetes.io/ingress.class":   "nginx",
+			"cert-manager.io/custer-issuer": config.ClusterCertificate,
 			"application":                   "trader",
 		},
 	}
@@ -214,7 +215,7 @@ func createIngress(resourceIdentifier string, id string, ingressInterface cnetwo
 			Hosts: []string{
 				id + "." + config.Hostname,
 			},
-			SecretName: config.CluserCertificate,
+			SecretName: resourceIdentifier,
 		},
 	}
 

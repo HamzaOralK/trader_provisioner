@@ -15,7 +15,7 @@ import (
 func UpdateConfigHandler(w http.ResponseWriter, r *http.Request) {
 	ucr := UpdateConfigRequest{}
 	_ = json.NewDecoder(r.Body).Decode(&ucr)
-	dbFindResult := db.instance.Where("user_id = ? AND trader_id = ?", ucr.UserId, ucr.TraderId)
+	dbFindResult := config.db.instance.Where("user_id = ? AND trader_id = ?", ucr.UserId, ucr.TraderId)
 	if dbFindResult.Error != nil {
 		log.Println(dbFindResult.Error.Error())
 		http.Error(w, dbFindResult.Error.Error(), http.StatusBadRequest)

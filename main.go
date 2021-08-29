@@ -9,9 +9,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-var db DB
 var err error
-var kubernetesClientSet *kubernetes.Clientset
 var config Config
 
 func init() {
@@ -19,11 +17,11 @@ func init() {
 }
 
 func main() {
-	db = databaseInitialize()
-	_ = db.instance.AutoMigrate(&Trader{})
+	config.db = databaseInitialize()
+	_ = config.db.instance.AutoMigrate(&Trader{})
 
 	var kubernetesConfig, _ = rest.InClusterConfig()
-	kubernetesClientSet, err = kubernetes.NewForConfig(kubernetesConfig)
+	config.kubernetesClientSet, err = kubernetes.NewForConfig(kubernetesConfig)
 	if err != nil {
 		panic(err.Error())
 	}

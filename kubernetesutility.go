@@ -8,9 +8,9 @@ import (
 )
 
 func createClientSets() (appsv1.DeploymentInterface, apiv1.ConfigMapInterface, apiv1.ServiceInterface, networkingv1.IngressInterface) {
-	deploymentsInterface := kubernetesClientSet.AppsV1().Deployments(v1.NamespaceDefault)
-	configMapInterface := kubernetesClientSet.CoreV1().ConfigMaps(v1.NamespaceDefault)
-	serviceInterface := kubernetesClientSet.CoreV1().Services(v1.NamespaceDefault)
-	networkingInterface := kubernetesClientSet.NetworkingV1().Ingresses(v1.NamespaceDefault)
+	deploymentsInterface := config.kubernetesClientSet.AppsV1().Deployments(v1.NamespaceDefault)
+	configMapInterface := config.kubernetesClientSet.CoreV1().ConfigMaps(v1.NamespaceDefault)
+	serviceInterface := config.kubernetesClientSet.CoreV1().Services(v1.NamespaceDefault)
+	networkingInterface := config.kubernetesClientSet.NetworkingV1().Ingresses(v1.NamespaceDefault)
 	return deploymentsInterface, configMapInterface, serviceInterface, networkingInterface
 }
