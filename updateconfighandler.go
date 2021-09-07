@@ -15,7 +15,7 @@ import (
 func UpdateConfigHandler(w http.ResponseWriter, r *http.Request) {
 	ucr := UpdateConfigRequest{}
 	_ = json.NewDecoder(r.Body).Decode(&ucr)
-	dbFindResult := config.db.instance.Where("user_id = ? AND trader_id = ?", ucr.UserId, ucr.TraderId)
+	dbFindResult := config.db.instance.Where("user_id = ? AND trader_id = ?", ucr.UserId, ucr.TraderId).Model(&Trader{})
 	if dbFindResult.Error != nil {
 		log.Println(dbFindResult.Error.Error())
 		http.Error(w, dbFindResult.Error.Error(), http.StatusBadRequest)
@@ -25,6 +25,6 @@ func UpdateConfigHandler(w http.ResponseWriter, r *http.Request) {
 		deploymentsClient, configMapClient, _, _ := createClientSets()
 		configMapClient.Update(context.TODO(), createConfigMapTemplate(resourceIdentifier, ucr.Config), metav1.UpdateOptions{})
 		data := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, time.Now().String())
-		deploymentsClient.Patch(context.TODO(), resourceIdentifier, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
+		deploymentsClient.Patch(context.TODO(), resourceIdentifier, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-recreate"})
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
@@ -45,7 +46,10 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("deployment %q with config map %q and service %q has been created, ingress inserted into %q",
 			deployment.GetObjectMeta().GetName(), configMap.GetObjectMeta().GetName(), service.GetObjectMeta().GetName(), ingress.GetObjectMeta().GetName())
-		response, _ := json.Marshal(ProvisionResponse{Id: deploymentId})
+		response, _ := json.Marshal(ProvisionResponse{
+			Id: deploymentId,
+			Version: strings.Split(config.TraderImage,":")[1],
+		})
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(response)
 		return nil
@@ -62,6 +66,7 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: pointer.Int32Ptr(1),
+			Strategy: appsv1.DeploymentStrategy{Type: "Recreate"},
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"trader": resourceIdentifier,
@@ -173,7 +178,6 @@ func createService(resourceIdentifier string, serviceInterface capiv1.ServiceInt
 }
 
 func createIngress(resourceIdentifier string, id string, ingressInterface cnetworkingv1.IngressInterface) (*networkingv1.Ingress, error) {
-
 	pt := networkingv1.PathTypePrefix
 	path := networkingv1.HTTPIngressPath{
 		Path:     "/",

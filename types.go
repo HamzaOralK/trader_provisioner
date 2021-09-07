@@ -34,6 +34,7 @@ type ProvisionRequest struct {
 
 type ProvisionResponse struct {
 	Id string `json:"id"`
+	Version string `json:"version"`
 }
 
 type DeletionRequest struct {
@@ -45,6 +46,15 @@ type UpdateConfigRequest struct {
 	UserId   string `json:"user_id"`
 	TraderId string `json:"trader_id"`
 	Config   string `json:"configuration"`
+}
+
+type UpdateImageRequest struct {
+	UserId   string `json:"user_id"`
+	TraderId string `json:"trader_id"`
+}
+
+type TraderVersionResponse struct {
+	Version string `json:"version"`
 }
 
 type Config struct {

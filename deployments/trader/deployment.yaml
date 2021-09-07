@@ -38,6 +38,8 @@ spec:
               value: postgres-postgresql
             - name: DB_USER
               value: postgres
+            - name: DB_PORT
+              value: "5432"
             - name: DB_PASSWORD
               value: 12345aaa
             - name: DB_SCHEMA
@@ -45,7 +47,7 @@ spec:
             - name: TRADER_PREFIX
               value: "trader-"
             - name: TRADER_IMAGE
-              value: ttrader:0.0.1
+              value: ttrader:0.0.2
             - name: TRADER_PORT
               value: "8080"
             - name: TRADER_INGRESS_NAME

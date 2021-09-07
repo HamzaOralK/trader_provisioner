@@ -27,9 +27,11 @@ func main() {
 	}
 
 	r := mux.NewRouter()
+	r.HandleFunc("/traderVersion", GetTraderVersion).Methods("GET")
 	r.HandleFunc("/provision", ProvisionHandler).Methods("POST")
 	r.HandleFunc("/deletion", DeletionHandler).Methods("POST")
-	r.HandleFunc("/update", UpdateConfigHandler).Methods("PUT")
+	r.HandleFunc("/updateImage", UpdateImageHandler).Methods("POST")
+	r.HandleFunc("/updateConfig", UpdateConfigHandler).Methods("PUT")
 
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"HEAD", "POST", "PUT", "OPTIONS"})
