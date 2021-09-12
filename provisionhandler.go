@@ -77,6 +77,9 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 					Labels: map[string]string{
 						"trader": resourceIdentifier,
 					},
+					Annotations: map[string]string{
+						"cluster-autoscaler.kubernetes.io/safe-to-evict": "false",
+					},
 				},
 				Spec: apiv1.PodSpec{
 					ImagePullSecrets: []apiv1.LocalObjectReference{{Name: config.ImagePullSecrets}},
