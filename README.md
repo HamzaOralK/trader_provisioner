@@ -1,5 +1,16 @@
 # Services
 List of services that trader provisioner accepts.
+## Get Latest Trader Version
+```GET```
+
+Response
+```json
+{
+  "version": "xxx"
+}
+```
+
+
 ## Provision a Trader 
 ```POST``` /provision
 
@@ -19,7 +30,7 @@ Response
 
 ## Update Trader Configuration
 
-```PUT``` /update
+```PUT``` /updateConfig
 ```json
 {
 	"user_id": "user_id",
@@ -36,6 +47,15 @@ Response
 }
 ```
 
+## Update a Trader Image to Latest
+```POST``` /updateImage
+```json
+{
+	"user_id": "user_id",
+	"trader_id": "trader_id"
+}
+```
+
 # Building and Running
 
 ````shell
@@ -43,13 +63,7 @@ $ go build -o ./dist && eval $(minikube docker-env) && make dockerize
 # deploy postgres
 $ helm repo add bitnami https://charts.bitnami.com/bitnami
 $ helm install -f helm-values/postgres.yaml postgres bitnami/postgresql
-# deploy model-manager for strategy deployment
-$ kubectl apply -f deployments/model-manager
 -------
-## go to notebook & strategies folder
-$ cd "wherever is the notebooks"
-$ for i in $(ls *py); do kubectl cp $i <pod_adı>:/tmp/strategies/$i; done;
-$ for i in $(ls *pkl); do kubectl cp $i <pod_adı>:/tmp/notebooks/$i; done;
 ## go back to repository, wait for postgres and deploy trader
 $ kubectl apply -f deployments/trader
 

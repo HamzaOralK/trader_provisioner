@@ -34,6 +34,8 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            - name: ENVIRONMENT
+              value: local
             - name: DB_HOST
               value: postgres-postgresql
             - name: DB_USER
@@ -47,7 +49,7 @@ spec:
             - name: TRADER_PREFIX
               value: "trader-"
             - name: TRADER_IMAGE
-              value: ttrader:0.0.2
+              value: ttrader:0.0.3
             - name: TRADER_PORT
               value: "8080"
             - name: TRADER_INGRESS_NAME
