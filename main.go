@@ -1,6 +1,11 @@
 package main
 
 import (
+	"github.com/Coinoner/trader_provisioner/pkg/config"
+	"github.com/Coinoner/trader_provisioner/pkg/delete"
+	"github.com/Coinoner/trader_provisioner/pkg/provision"
+	"github.com/Coinoner/trader_provisioner/pkg/update"
+	"github.com/Coinoner/trader_provisioner/pkg/version"
 	"net/http"
 
 	"github.com/gorilla/handlers"
@@ -10,28 +15,25 @@ import (
 )
 
 var err error
-var config Config
 
 func init() {
-	config = initializeConfig()
+	config.InitializeConfig()
 }
 
 func main() {
-	config.db = databaseInitialize()
-	_ = config.db.instance.AutoMigrate(&Trader{})
 
 	var kubernetesConfig, _ = rest.InClusterConfig()
-	config.kubernetesClientSet, err = kubernetes.NewForConfig(kubernetesConfig)
+	config.ApplicationConfig.KubernetesClientSet, err = kubernetes.NewForConfig(kubernetesConfig)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	r := mux.NewRouter()
-	r.HandleFunc("/traderVersion", GetTraderVersion).Methods("GET")
-	r.HandleFunc("/provision", ProvisionHandler).Methods("POST")
-	r.HandleFunc("/deletion", DeletionHandler).Methods("POST")
-	r.HandleFunc("/updateImage", UpdateImageHandler).Methods("POST")
-	r.HandleFunc("/updateConfig", UpdateConfigHandler).Methods("PUT")
+	r.HandleFunc("/traderVersion", version.GetTraderVersion).Methods("GET")
+	r.HandleFunc("/provision", provision.Handler).Methods("POST")
+	r.HandleFunc("/deletion", delete.Handler).Methods("POST")
+	r.HandleFunc("/updateImage", update.ImageHandler).Methods("POST")
+	r.HandleFunc("/updateConfig", update.ConfigHandler).Methods("PUT")
 
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"HEAD", "POST", "PUT", "OPTIONS"})

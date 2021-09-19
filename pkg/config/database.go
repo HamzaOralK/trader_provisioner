@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ type DB struct {
 	instance *gorm.DB
 }
 
-func databaseInitialize() DB {
+func DatabaseInitialize() DB {
 	sslMode := "require"
 	environment := os.Getenv("ENVIRONMENT")
 	if environment == "local" {

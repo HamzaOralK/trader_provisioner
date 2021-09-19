@@ -1,8 +1,11 @@
-package main
+package provision
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/Coinoner/trader_provisioner/pkg/config"
+	"github.com/Coinoner/trader_provisioner/pkg/models"
+	"github.com/Coinoner/trader_provisioner/pkg/utility"
 	"log"
 	"net/http"
 	"strings"
@@ -20,17 +23,17 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
-	pr := ProvisionRequest{}
+func Handler(w http.ResponseWriter, r *http.Request) {
+	pr := models.ProvisionRequest{}
 	_ = json.NewDecoder(r.Body).Decode(&pr)
 
 	deploymentId := uuid.NewV4().String()
-	resourceIdentifier := config.TraderPrefix + deploymentId
+	resourceIdentifier := config.ApplicationConfig.GetTraderPrefix() + deploymentId
 
-	deploymentsInterface, configMapInterface, serviceInterface, ingressInterface := createClientSets()
+	deploymentsInterface, configMapInterface, serviceInterface, ingressInterface := utility.CreateClientSets()
 
-	trader := Trader{UserId: pr.UserId, TraderId: deploymentId, Config: pr.Config}
-	_ = config.db.instance.Transaction(func(tx *gorm.DB) error {
+	trader := models.Trader{UserId: pr.UserId, TraderId: deploymentId, Config: pr.Config}
+	_ = config.ApplicationConfig.GetDbInstance().Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&trader).Error; err != nil {
 			log.Println(err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -46,9 +49,9 @@ func ProvisionHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("deployment %q with config map %q and service %q has been created, ingress inserted into %q",
 			deployment.GetObjectMeta().GetName(), configMap.GetObjectMeta().GetName(), service.GetObjectMeta().GetName(), ingress.GetObjectMeta().GetName())
-		response, _ := json.Marshal(ProvisionResponse{
+		response, _ := json.Marshal(models.ProvisionResponse{
 			Id: deploymentId,
-			Version: strings.Split(config.TraderImage,":")[1],
+			Version: strings.Split(config.ApplicationConfig.GetTraderImage(),":")[1],
 		})
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(response)
@@ -82,11 +85,11 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 					},
 				},
 				Spec: apiv1.PodSpec{
-					ImagePullSecrets: []apiv1.LocalObjectReference{{Name: config.ImagePullSecrets}},
+					ImagePullSecrets: []apiv1.LocalObjectReference{{Name: config.ApplicationConfig.GetImagePullSecrets()}},
 					Containers: []apiv1.Container{
 						{
 							Name:  "web",
-							Image: config.TraderImage,
+							Image: config.ApplicationConfig.GetTraderImage(),
 							Lifecycle: &apiv1.Lifecycle{
 								PreStop: &apiv1.Handler{
 									Exec: &apiv1.ExecAction{
@@ -105,7 +108,7 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 								{
 									Name:          "http",
 									Protocol:      apiv1.ProtocolTCP,
-									ContainerPort: config.TraderPort,
+									ContainerPort: config.ApplicationConfig.GetTraderPort(),
 								},
 							},
 							Resources: apiv1.ResourceRequirements{
@@ -138,7 +141,7 @@ func createDeployment(resourceIdentifier string, deploymentInterface cappsv1.Dep
 	return deploymentInterface.Create(context.TODO(), deploymentTemplate, metav1.CreateOptions{})
 }
 
-func createConfigMapTemplate(resourceIdentifier string, config string) *apiv1.ConfigMap {
+func CreateConfigMapTemplate(resourceIdentifier string, config string) *apiv1.ConfigMap {
 	return &apiv1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceIdentifier,
@@ -153,7 +156,7 @@ func createConfigMapTemplate(resourceIdentifier string, config string) *apiv1.Co
 }
 
 func createConfigMap(resourceIdentifier string, config string, configMapInterface capiv1.ConfigMapInterface) (*apiv1.ConfigMap, error) {
-	configMapTemplate := createConfigMapTemplate(resourceIdentifier, config)
+	configMapTemplate := CreateConfigMapTemplate(resourceIdentifier, config)
 	return configMapInterface.Create(context.TODO(), configMapTemplate, metav1.CreateOptions{})
 }
 
@@ -172,7 +175,7 @@ func createService(resourceIdentifier string, serviceInterface capiv1.ServiceInt
 			Ports: []apiv1.ServicePort{
 				{
 					Protocol: apiv1.ProtocolTCP,
-					Port:     config.TraderPort,
+					Port:     config.ApplicationConfig.GetTraderPort(),
 				},
 			},
 		},
@@ -199,14 +202,14 @@ func createIngress(resourceIdentifier string, id string, ingressInterface cnetwo
 		Name: resourceIdentifier,
 		Annotations: map[string]string{
 			"kubernetes.io/ingress.class":   "nginx",
-			"cert-manager.io/issuer": config.ClusterCertificate,
+			"cert-manager.io/issuer": config.ApplicationConfig.GetClusterCertificate(),
 			"application":                   "trader",
 		},
 	}
 
 	specRules := []networkingv1.IngressRule{
 		{
-			Host: id + "." + config.Hostname,
+			Host: id + "." + config.ApplicationConfig.GetHostname(),
 			IngressRuleValue: networkingv1.IngressRuleValue{
 				HTTP: &networkingv1.HTTPIngressRuleValue{
 					Paths: []networkingv1.HTTPIngressPath{
@@ -220,7 +223,7 @@ func createIngress(resourceIdentifier string, id string, ingressInterface cnetwo
 	specTLS := []networkingv1.IngressTLS{
 		{
 			Hosts: []string{
-				id + "." + config.Hostname,
+				id + "." + config.ApplicationConfig.GetHostname(),
 			},
 			SecretName: resourceIdentifier,
 		},
