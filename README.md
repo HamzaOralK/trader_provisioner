@@ -1,3 +1,6 @@
+# Rationale
+Needed a container deployment service for a trader application where deployments must happen with a trigger from another service. This service creates whole deployment when users purchase it. 
+
 # Services
 List of services that trader provisioner accepts.
 ## Get Latest Trader Version
